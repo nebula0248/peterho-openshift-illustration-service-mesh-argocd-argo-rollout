@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080a0a">
+  <meta name="description" content="An interactive architecture lab for active-active OpenShift, Service Mesh, GitOps and progressive delivery.">
+  <title>Peter Ho's OpenShift Interactive Presenter</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <a href="#workspace" class="skip-link">Skip to architecture demo</a>
+  <header class="topbar">
+    <div class="topbar-identity">
+      <a class="brand" href="/" aria-label="Peter Ho's OpenShift Interactive Presenter home"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5 24V8l11 8L27 8v16M5 8l11 16L27 8"/></svg><span>Peter Ho's OpenShift Interactive Presenter</span></a>
+      <span class="topbar-caption">OpenShift Active-Active Architecture and Delivery using Service Mesh, ArgoCD and Argo Rollout</span>
+    </div>
+    <div class="topbar-actions"><span class="simulation-pill"><i></i> Interactive simulation</span><button id="about-button" class="text-button">Architecture notes <span aria-hidden="true">↗</span></button></div>
+  </header>
+
+  <main>
+    <section class="intro">
+      <div><div class="eyebrow"><span></span> OPENSHIFT ARCHITECTURE LAB <span class="edition">/ 01</span></div>
+      <h1>Two datacenters. <span>One release story.</span></h1>
+      <p>Explore how Service Mesh, Argo CD and Argo Rollouts work together for active-active delivery.</p></div>
+      <button id="play-button" class="primary-button"><span class="play-icon" aria-hidden="true">▶</span><span id="play-label">Play walkthrough</span></button>
+    </section>
+
+    <section class="metrics" aria-label="Simulated architecture state">
+      <div class="metric"><span class="metric-icon" data-icon="layers"></span><div><span class="metric-label">TOPOLOGY</span><div class="metric-value">Active–active <span class="metric-tag">Multi-primary</span></div></div></div>
+      <div class="metric"><span class="metric-icon" data-icon="server"></span><div><span class="metric-label">CLUSTER HEALTH</span><div class="metric-value"><span id="cluster-health">2 / 2</span><span class="metric-caption" id="health-caption"><i class="status-dot"></i>Healthy</span></div></div></div>
+      <div class="metric"><span class="metric-icon" data-icon="shield"></span><div><span class="metric-label">SERVICE-TO-SERVICE</span><div class="metric-value">mTLS <span class="metric-tag">Strict</span></div></div></div>
+      <button class="metric metric-button" id="traffic-lab-button" aria-label="Explore the global traffic calculation"><span class="metric-icon" data-icon="chart"></span><span><span class="metric-label">GLOBAL ORDERS v2 <span class="estimated">EST.</span></span><span class="metric-value"><span id="global-weight">0%</span><span class="metric-caption">of matching calls <span aria-hidden="true">↗</span></span></span></span></button>
+    </section>
+
+    <nav class="scenario-nav" aria-label="Choose an architecture flow" id="scenario-nav"></nav>
+
+    <section class="workspace" id="workspace" aria-label="Interactive architecture">
+      <div class="left-column">
+      <div class="canvas-panel">
+        <div class="canvas-toolbar"><div class="canvas-title"><span class="status-dot"></span> Architecture canvas <span class="canvas-separator">/</span><span id="canvas-scenario">Request journey</span></div><button id="reset-button" class="icon-button" aria-label="Reset current walkthrough">↺</button></div>
+        <div class="stepper-wrap"><div class="stepper-heading"><span>FOLLOW THE FLOW</span><span id="step-count">01 / 04</span></div><nav id="stepper" class="stepper" aria-label="Flow steps"></nav></div>
+        <p class="scenario-summary" id="scenario-summary"></p>
+        <div id="rollback-options" class="rollback-options" hidden><span>Failure scenario</span><button data-failure-site="a" aria-pressed="true">DC-A · B stays v1</button><button data-failure-site="b" aria-pressed="false">DC-B · A stays v2</button></div>
+        <div class="diagram-container"><div id="diagram" role="group" aria-label="Two independent OpenShift clusters and their shared infrastructure"></div><div class="diagram-hint">Bright blocks show this step’s action · Other components retain their current state</div></div>
+        <div class="canvas-legend" id="traffic-legend"><span><i class="legend-line dns"></i>Logical DNS steering</span><span><i class="legend-line traffic"></i>Service traffic</span><span><i class="legend-line gitops"></i>GitOps / control</span><span><i class="legend-line mesh"></i>Cross-network mTLS</span></div>
+        <div class="canvas-legend" id="certificate-legend" hidden><span><i class="legend-line dns"></i>PKI signing</span><span><i class="legend-line gitops"></i>Local renewal</span><span><i class="legend-line traffic"></i>Certificate activation</span><span><i class="legend-line mesh"></i>Service mTLS</span></div>
+      </div>
+
+    <section class="activity-panel" aria-label="Simulated controller activity"><div class="activity-heading"><span class="terminal-icon" aria-hidden="true">&gt;_</span><h3>Flow activity</h3><span class="activity-subtitle">A readable trace of this walkthrough</span><span class="simulation-label">SIMULATED</span></div><ol id="activity-log" aria-live="polite" aria-relevant="additions"></ol></section>
+    <footer><span><i class="status-dot"></i> Independent clusters. Shared intent. Controlled delivery.</span><button class="text-button" id="sources-button">Assumptions & references <span aria-hidden="true">↗</span></button><span class="footer-version">OCP 4.22 / OSSM 3</span></footer>
+      </div>
+
+      <aside class="detail-panel" aria-label="Current flow step">
+        <div class="detail-top"><span id="step-eyebrow" class="eyebrow">STEP 01 <span> / 04</span></span><span id="step-category" class="detail-category">BASELINE</span></div>
+        <div class="detail-scroll" tabindex="0" role="region" aria-label="Step description and configuration">
+        <h2 id="step-title">Loading the architecture…</h2>
+        <div class="detail-tabs" role="tablist" aria-label="Step detail view"><button id="explanation-tab" role="tab" aria-selected="true" aria-controls="explanation-panel" tabindex="0" class="active">Walkthrough</button><button id="config-tab" role="tab" aria-selected="false" aria-controls="config-panel" tabindex="-1">Configuration <span class="code-symbol">{ }</span></button></div>
+        <div id="explanation-panel" role="tabpanel" aria-labelledby="explanation-tab">
+          <p id="step-body" class="step-body"></p><p id="step-detail" class="step-detail"></p>
+          <div class="traffic-card"><div class="mini-heading"><span>ORDERS VERSION MIX</span><span>Simulated</span></div><div id="traffic-bars"></div><div class="traffic-card-foot"><span><i class="version-dot v1"></i>Version v1</span><span><i class="version-dot v2"></i>Version v2</span><button id="traffic-inline-button" aria-label="Explore traffic calculation">Explore <span aria-hidden="true">↗</span></button></div></div>
+          <div id="certificate-card" class="certificate-card" hidden><div class="mini-heading"><span>CERTIFICATE STATE</span><span>Simulated</span></div><p id="certificate-status"></p><div id="certificate-values"></div><p class="certificate-card-foot">Applications remain on v1 throughout.</p></div>
+          <div id="step-note" class="step-note"></div>
+          <button id="show-config" class="config-link"><span class="code-symbol">{ }</span><span id="config-link-label">Inspect configuration</span><span aria-hidden="true">→</span></button>
+        </div>
+        <div id="config-panel" role="tabpanel" aria-labelledby="config-tab" hidden>
+          <p id="config-summary" class="config-summary"></p>
+          <div class="config-toolbar"><span id="config-count"></span><button id="download-step" class="text-button">Download step ↓</button></div>
+          <div id="config-list" class="config-list" role="group" aria-label="Changes and first configuration references for this step"></div>
+          <div id="config-empty" class="config-empty" hidden>No new configuration change in this step.</div>
+          <div id="config-content">
+          <p id="config-actor" class="config-actor"></p>
+          <p id="config-mode" class="config-mode"></p><p id="config-purpose" class="config-purpose"></p>
+          <div class="code-header"><span id="config-filename"></span><button id="expand-config" class="text-button" aria-label="Expand configuration">Expand ↗</button><button id="copy-button" class="text-button" aria-label="Copy configuration">Copy</button></div>
+          <pre tabindex="0"><code id="config-code"></code></pre>
+          </div>
+          <p class="config-disclaimer">Full definitions appear once per flow. Diffs show changed fields; runtime observations describe simulated system behavior. Complete references remain in the Architecture notes download.</p>
+        </div>
+        <div class="step-sources" id="step-sources"></div>
+        </div>
+        <div class="detail-bottom"><button id="prev-button" class="secondary-button" aria-label="Previous step">←</button><button id="next-button" class="next-button"><span id="next-label">Next step</span><span aria-hidden="true">→</span></button></div>
+        <div class="keyboard-hint"><kbd>←</kbd><kbd>→</kbd> navigate <span>·</span> <kbd>space</kbd> play / pause</div>
+      </aside>
+    </section>
+
+
+  </main>
+
+  <dialog id="config-dialog" class="modal config-modal"><div class="modal-heading"><div><span class="eyebrow">CONFIGURATION FILE</span><h2 id="expanded-filename"></h2></div><button class="close-dialog icon-button" aria-label="Close expanded configuration">×</button></div><p id="expanded-purpose" class="config-purpose"></p><pre tabindex="0"><code id="expanded-code"></code></pre></dialog>
+
+  <dialog id="about-dialog" class="modal"><div class="modal-heading"><div><span class="eyebrow">BEHIND THE DIAGRAM</span><h2>Architecture notes</h2></div><button class="close-dialog icon-button" aria-label="Close architecture notes">×</button></div>
+    <p class="modal-lede">A teaching model of a staged, active-active release across two separate OpenShift clusters.</p>
+    <div class="notes-grid"><article><span class="note-number">01</span><h3>Independent by design</h3><p>OpenShift 4.22 is the requested target. Each datacenter has its own API, etcd, nodes, pod network, GitOps and Rollouts controllers. Service Mesh 3 uses a shared mesh identity and trust root, with one primary istiod per site.</p></article><article><span class="note-number">02</span><h3>Three different decisions</h3><p>The logical Users → GTM → LTM diagram represents DNS selection. Actual HTTPS connects to the selected LTM VIP, then HAProxy and the mesh gateway. Mesh routing determines local service destinations. “L5 GTM” is interpreted as F5 GTM.</p></article><article><span class="note-number">03</span><h3>Local releases, shared services</h3><p>Frontend and Orders rollout hosts are cluster-local. Catalog is a shared multicluster service. The mesh uses sidecars, distinct network IDs, reachable API endpoints and dedicated TCP/15443 east-west VIPs on each site's LTM.</p></article><article><span class="note-number">04</span><h3>Explicit promotion between sites</h3><p>The progressive delivery flow stages A before B. An approved pipeline opens a site-specific Git PR. After merge, that site’s Argo CD auto-syncs. A must be fully healthy on the approved image before a separate B approval and PR. The example uses GitHub Actions protected environments; other CI systems can use the same sequence. Each Rollouts controller manages only its own cluster.</p></article></div>
+    <div class="assumption-note"><strong>What the simulation assumes</strong><p>Stateless applications, compatible APIs, an independently resilient data tier, sufficient failover capacity, common mesh trust and appropriate network access. Database replication and migrations are outside this demo. All metrics are illustrative; no cluster is contacted.</p><p>YAML is educational, not an installation bundle. Choose exact OpenShift GitOps, Rollouts, Service Mesh and Istio versions against Red Hat's compatibility matrix for OpenShift 4.22. This demo does not assert that every version pairing is supported.</p></div>
+    <div class="assumption-note"><strong>Certificate rotation uses an external-CA variant</strong><p>The identity flow starts with cert-manager and istio-csr already installed in each site, backed by shared Venafi/private PKI and a pinned public root. Workload agents renew through local SDS; private workload keys stay in their pods. ACME is a separate external HTTPS option because cert-manager's ACME issuer cannot sign the SPIFFE URI SANs this mesh requires. Root-CA rollover and migration from the built-in CA require separate plans.</p></div>
+    <h3 class="references-heading">Technical references</h3><div id="all-sources" class="all-sources"></div><button id="download-button" class="secondary-button download-button">↓ Download teaching configurations</button>
+  </dialog>
+
+  <dialog id="traffic-dialog" class="modal traffic-modal"><div class="modal-heading"><div><span class="eyebrow">TRAFFIC EXPLORER</span><h2>Local weights. Global exposure.</h2></div><button class="close-dialog icon-button" aria-label="Close traffic explorer">×</button></div><p class="modal-lede">Adjust the assumed request mix to see how the two local rollout weights combine.</p>
+    <label class="slider-label" for="site-share"><span>Requests entering Datacenter A</span><output id="site-share-value">50%</output></label><input type="range" id="site-share" min="0" max="100" value="50" step="5"><div class="slider-endpoints"><span>All DC-B</span><span>All DC-A</span></div>
+    <label class="slider-label" for="canary-a"><span>Orders v2 traffic in DC-A</span><output id="canary-a-value">0%</output></label><input type="range" id="canary-a" min="0" max="100" value="0" step="5">
+    <label class="slider-label" for="canary-b"><span>Orders v2 traffic in DC-B</span><output id="canary-b-value">0%</output></label><input type="range" id="canary-b" min="0" max="100" value="0" step="5">
+    <div class="formula-card"><span>ESTIMATED GLOBAL ORDERS v2</span><strong id="lab-result">0%</strong><code id="lab-formula">(50% × 0%) + (50% × 0%) = 0%</code><div class="lab-bar"><i id="lab-bar-fill"></i></div></div>
+    <p class="config-disclaimer">Assumes the same matching Orders call volume per incoming request in each site. A GTM DNS ratio is not an exact request share. This explorer is independent of the walkthrough and does not change its state.</p><button id="lab-reset" class="secondary-button">Use current walkthrough values</button>
+  </dialog>
+  <div id="toast" role="status" class="toast" hidden></div>
+  <noscript><div class="error-banner">Enable JavaScript to explore the architecture. Run this app with python3 app.py.</div></noscript>
+</body>
+</html>

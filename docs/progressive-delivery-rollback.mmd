@@ -1,0 +1,38 @@
+sequenceDiagram
+    autonumber
+    actor H as Release team
+    participant G as Shared Git repository
+    participant C as Argo CD
+    participant R as Argo Rollouts
+    participant S as Service Mesh
+    participant M as Monitoring
+
+    Note over H,M: ROLLBACK - v2 fails during its canary, before promotion. Stable v1 is still available
+    Note over C,M: These components belong to the affected OpenShift site
+
+    R->>M: Request canary health measurements
+    M-->>R: Return unhealthy measurements
+    R->>R: Configured failure threshold is exceeded
+    R->>R: Automatically abort the local canary
+    R->>S: Restore 100% of local Orders traffic to stable v1
+    S->>S: Apply the restored traffic policy
+    Note over G,S: Traffic recovery is automatic. Git still declares v2
+    H->>H: Verify service recovery and hold further release approvals
+
+    H->>G: Open a PR restoring only the affected site's version to v1
+    H->>G: Review and merge the recovery PR
+    C->>G: Fetch the approved recovery configuration
+    G-->>C: Desired application version is v1
+    C->>R: Sync the previous stable version
+    R->>R: Reconcile v1 as the desired stable release
+    H->>C: Verify application is Synced and Healthy
+    C-->>H: Git and running application agree on v1
+
+    Note over C,M: Other site stays unchanged. If A fails, B stays on v1. If B fails, A stays on v2
+    Note over H,S: GTM site distribution stays unchanged. Investigate v2 before approving another release
+
+    %% Architectural interactions summarize API-mediated operations.
+    %% Scope: canary failure before promotion, followed by a reviewed Git revert.
+    %% Source: configurations.py effective analysis and rollback examples.
+    %% https://argoproj.github.io/argo-rollouts/features/analysis/
+    %% https://argoproj.github.io/argo-rollouts/FAQ/

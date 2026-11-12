@@ -1,0 +1,49 @@
+sequenceDiagram
+    autonumber
+    actor H as Release team
+    participant P as Release pipeline
+    participant G as Shared Git repository
+    box Selected OpenShift site
+        participant C as Argo CD
+        participant R as Argo Rollouts
+        participant S as Service Mesh
+        participant M as Monitoring
+    end
+
+    Note over H,M: SUCCESS - both sites start on v1. CI has built and tested v2
+    Note over C,M: Each site has its own Argo CD, Rollouts, mesh and monitoring
+
+    loop Release DC-A first, then DC-B only after A is fully promoted and healthy
+        H->>P: Approve release for the selected site
+        P->>G: Open PR changing only that site's version to v2
+        H->>G: Review and merge the release PR
+        C->>G: Fetch approved site configuration
+        G-->>C: Desired application version is v2
+        C->>R: Sync the site's Rollout configuration
+        R->>R: Start v2 canary while keeping stable v1 available
+
+        loop Local canary traffic - 10%, then 50% after checks pass
+            R->>S: Update the site's canary traffic policy
+            S->>S: Split local Orders requests between v1 and v2
+            R->>R: Allow warm-up before analysis
+            R->>M: Request canary health measurements
+            M-->>R: Return measured service health
+            R->>R: Evaluate and pass the configured health checks
+        end
+
+        R->>R: Pause for final promotion approval
+        H->>M: Review fresh telemetry and end-to-end checks
+        M-->>H: Return current health evidence
+        H->>R: Approve promotion for this site
+        R->>R: Promote v2 to the stable release
+        R->>S: Direct 100% of local Orders traffic to stable v2
+        H->>H: Verify full promotion and full-traffic health before accepting the site
+    end
+
+    Note over C,M: Both sites now serve v2. Each site's rollout was independent
+    Note over G,S: GTM site distribution stays unchanged. Canary percentages apply within the selected site
+
+    %% Architectural interactions summarize API-mediated operations.
+    %% Source: configurations.py effective rollout, analysis, pipeline and promotion examples.
+    %% https://argoproj.github.io/argo-rollouts/features/analysis/
+    %% https://argoproj.github.io/argo-rollouts/features/traffic-management/istio/
